@@ -4,30 +4,6 @@ modules = ["go"]
 channel = "stable-24_05"
 
 [workflows]
-runButton = "Project"
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "LSCC Node"
-
-[[workflows.workflow]]
-name = "LSCC Node"
-author = "agent"
-
-[workflows.workflow.metadata]
-agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "packager.installForAll"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "go run main.go"
 
 [deployment]
 run = ["sh", "-c", "go run main.go"]
