@@ -1,0 +1,22 @@
+{
+  "node_id": "lscc-test-node",
+  "port": 8000,
+  "bootstrap_nodes": [],
+  "is_relay": true,
+  "shard_id": 0,
+  "shard_count": 4,
+  "cross_shard_ratio": 20,
+  "relay_nodes_ratio": 10,
+  "layer_count": 3,
+  "nodes_per_shard": 10,
+  "sharding_strategy": 0,
+  "consensus_type": "pos",
+  "block_time": 5,
+  "min_confirmations": 6,
+  "max_transactions_per_block": 1000,
+  "cross_channel_verify": true,
+  "connection_timeout": 30,
+  "sync_interval": 60,
+  "peer_limit": 50,
+  "data_dir": "./data"
+}
