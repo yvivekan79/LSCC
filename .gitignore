@@ -1,0 +1,14 @@
+# Replit configuration files
+.replit
+replit.nix
+
+# Other common Go ignores
+/bin/
+/pkg/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
