@@ -1,9 +1,0 @@
-modules = ["go"]
-
-[nix]
-channel = "stable-24_05"
-
-[workflows]
-
-[deployment]
-run = ["sh", "-c", "go run main.go"]
