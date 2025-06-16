@@ -5,6 +5,7 @@ import (
     "fmt"
     "math/rand"
     "sync"
+    "time"
 )
 
 type Transaction struct {
@@ -12,6 +13,7 @@ type Transaction struct {
     Sender   string
     Receiver string
     Amount   float64
+    SubmitAt time.Time
 }
 
 type TransactionPool struct {
@@ -44,6 +46,7 @@ func GenerateDeterministicTransactions(seed int64, count int) []*Transaction {
             Sender:   fmt.Sprintf("user-%d", rand.Intn(10)),
             Receiver: fmt.Sprintf("user-%d", rand.Intn(10)),
             Amount:   float64(rand.Intn(100)),
+            SubmitAt: time.Now(),
         }
         txs = append(txs, tx)
     }

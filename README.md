@@ -1,127 +1,101 @@
-# Layered Sharding with Cross-Channel Consensus (LSCC)
 
-LSCC is a hybrid blockchain scalability solution that integrates the strengths of both on-chain solutions (like sharding) and off-chain solutions (like state channels) to optimize transaction throughput, latency, and cross-shard communication.
+# LSCC Blockchain Benchmarking Suite
 
-## Overview
+This project benchmarks and compares four consensus algorithms in parallel:
 
-This implementation is based on the academic paper "A Hybrid Scalability Solution for Blockchain: Layered Sharding with Cross-Channel Consensus (LSCC)" and provides a functioning blockchain network with:
+- 🧠 **Proof of Stake (PoS)**
+- ⛏️ **Proof of Work (PoW)** (Multithreaded)
+- 🛡️ **PBFT (Practical Byzantine Fault Tolerance)**
+- 🔗 **Cross-Channel Consensus**
 
-- Multi-layered sharding architecture
-- Cross-channel consensus for inter-shard communication
-- Dynamic node assignment to shards
-- Relay nodes for efficient cross-shard transactions
-- Basic Proof-of-Stake consensus
+Each engine runs independently using a shared transaction pool and logs its performance.
 
-## Key Features
+---
 
-- **Layered Sharding**: Multiple layers of shards to balance transaction load
-- **Cross-Channel Consensus**: Efficient cross-shard communication mechanism
-- **Relay Nodes**: Specialized nodes for facilitating cross-shard transactions
-- **Flexible Architecture**: Support for different consensus mechanisms and sharding strategies
+## 📦 Project Structure
 
-## Architecture
+```
+LSCC/
+├── main.go                      # Orchestrates all 4 consensus engines
+├── core/
+│   └── txpool.go                # Shared transaction pool + Transaction struct
+├── consensus/
+│   └── pow.go                   # Multithreaded PoW implementation
+├── metrics/
+│   └── recorder.go              # Metrics recording (block time + tx latency)
+├── results_block_latency.csv    # Output: block-level latency
+├── results_tx_latency.csv       # Output: per-transaction latency
+└── Makefile                     # Build & run targets
+```
 
-The LSCC architecture consists of the following main components:
+---
 
-1. **Core**: Basic blockchain data structures (blocks, transactions)
-2. **Sharding**: Sharding management and cross-shard communication
-3. **Consensus**: Consensus mechanisms (PoS implementation)
-4. **Network**: P2P networking and message handling
-5. **Config**: Configuration management
-6. **Utils**: Utility functions and logging
+## 🚀 How to Run
 
-## Getting Started
-
-### Prerequisites
-
-- Go 1.16 or later
-
-### Building the Project
-
-Build the project:
+### 🛠️ Build
 
 ```bash
-go build -o lscc-node
+make build
 ```
 
-### Running a Node
-
-Run a node with default configuration:
+### ▶️ Run Default Benchmark
 
 ```bash
-./lscc-node
+make run
 ```
 
-Or with custom configuration:
+### 🧪 Run Enhanced Benchmark (Live TX Feed + Metrics)
 
 ```bash
-./lscc-node --config=config.json --port=8001 --nodeid=my-node-1 --relay=true
+make run-enhanced
 ```
 
-## Configuration
-
-Sample configuration (config.json):
-
-```json
-{
-  "node_id": "lscc-test-node",
-  "port": 8000,
-  "bootstrap_nodes": [],
-  "is_relay": true,
-  "shard_id": 0,
-  "shard_count": 4,
-  "cross_shard_ratio": 20,
-  "relay_nodes_ratio": 10,
-  "layer_count": 3,
-  "nodes_per_shard": 10,
-  "sharding_strategy": 0,
-  "consensus_type": "pos",
-  "block_time": 5,
-  "min_confirmations": 6,
-  "max_transactions_per_block": 1000,
-  "cross_channel_verify": true,
-  "connection_timeout": 30,
-  "sync_interval": 60,
-  "peer_limit": 50,
-  "data_dir": "./data"
-}
-```
-
-## Project Structure
-
-```
-├── cli/           # Command-line interface
-├── config/        # Configuration
-├── consensus/     # Consensus algorithms
-├── core/          # Core blockchain structures
-├── network/       # P2P networking
-├── sharding/      # Sharding implementation
-├── utils/         # Utilities and logging
-├── main.go        # Entry point
-└── config.json    # Default configuration
-```
-
-## Testing
-
-To run tests:
+### 🧼 Clean
 
 ```bash
-go test ./...
+make clean
 ```
 
-## Implementation Status
+---
 
-This is an ongoing implementation with the following components completed:
+## 📈 Metrics Collected
 
-- [x] Basic blockchain data structures
-- [x] Multi-layer sharding architecture
-- [x] Cross-channel communication
-- [x] Proof-of-Stake consensus (basic)
-- [x] P2P networking
-- [ ] Performance optimization
-- [ ] Security hardening
-- [ ] Full test coverage
+| Metric              | Description                                 |
+|---------------------|---------------------------------------------|
+| Block Latency       | Time taken to create/commit each block      |
+| Transaction Latency | Time from submission to inclusion in block  |
+| TPS                 | Transactions per second (logged to console) |
 
-## License
+CSV outputs:
+- `results_block_latency.csv`
+- `results_tx_latency.csv`
 
-MIT
+---
+
+## 🔬 Configuration
+
+Modify `config.json` to change:
+- Consensus parameters (PoS stake, PoW difficulty, etc.)
+- Logging level
+- Network settings (optional)
+
+---
+
+## 📊 Visualize Results
+
+You can load the CSV outputs into:
+- 📊 Excel or Google Sheets
+- 📈 Grafana (CSV-to-Prometheus exporter)
+- 📘 Python (pandas + matplotlib)
+
+---
+
+## 📥 Contributing
+
+Feel free to fork, experiment, and submit PRs to improve benchmarking accuracy, visualization, or consensus implementations.
+
+---
+
+## 🧠 Authors
+
+Built to evaluate consensus performance in LSCC-based blockchains for research, education, and system design.
