@@ -165,13 +165,7 @@ func (pos *PoSConsensus) CreateBlock() (*core.Block, error) {
         }
         
         // Create new block
-        newBlock := core.NewBlock(
-                lastHash,
-                latestBlock.Header.Height+1,
-                pos.config.ShardID,
-                latestBlock.Header.Layer,
-                pos.config.NodeID,
-        )
+        newBlock := core.NewBlock(latestBlock, txs, pos.config.NodeID)
         
         // Add transactions to the block (up to max limit)
         txCount := 0
@@ -210,14 +204,14 @@ func (pos *PoSConsensus) ValidateBlock(block *core.Block) bool {
         }
         
         // Verify block signature
-        if !block.VerifySignature(block.Header.ValidatorID) {
+        if !block.VerifySignature() {
                 pos.logger.Warn("Invalid block signature")
                 return false
         }
         
         // Validate block structure and transactions
         latestBlock := pos.blockchain.GetLatestBlock()
-        if !block.IsValid(latestBlock) {
+        if !block.IsValid() {
                 pos.logger.Warn("Invalid block structure")
                 return false
         }

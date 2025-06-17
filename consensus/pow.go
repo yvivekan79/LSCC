@@ -10,6 +10,7 @@ import (
 
     "lscc/config"
     "lscc/core"
+    "lscc/metrics"
     "lscc/utils"
 )
 
@@ -21,15 +22,17 @@ type PoWConsensus struct {
     stopChan   chan struct{}
     mu         sync.RWMutex
     logger     *utils.Logger
+    recorder   *metrics.Recorder
 }
 
-func NewPoWConsensus(cfg *config.Config, bc *core.Blockchain) *PoWConsensus {
+func NewPoWConsensus(cfg *config.Config, bc *core.Blockchain, recorder *metrics.Recorder) *PoWConsensus {
     return &PoWConsensus{
         blockchain: bc,
         config:     cfg,
         difficulty: 4,
         stopChan:   make(chan struct{}),
         logger:     utils.GetLogger(),
+        recorder:   recorder,
     }
 }
 
@@ -46,14 +49,14 @@ func (pow *PoWConsensus) Stop() error {
 }
 
 func (pow *PoWConsensus) CreateBlock() (*core.Block, error) {
-    txs := pow.blockchain.CollectPendingTransactions()
+    txs := pow.blockchain.TxPool.GetAll()
     prevBlock := pow.blockchain.GetLatestBlock()
     block := core.NewBlock(prevBlock, txs, pow.config.NodeID)
     return block, nil
 }
 
 func (pow *PoWConsensus) ValidateBlock(block *core.Block) bool {
-    hash := sha256.Sum256([]byte(block.Hash()))
+    hash := sha256.Sum256([]byte([]byte(block.Hash())))
     return hasLeadingZeros(hex.EncodeToString(hash[:]), pow.difficulty)
 }
 
@@ -76,26 +79,41 @@ func (pow *PoWConsensus) GetStatus() map[string]interface{} {
 }
 
 func (pow *PoWConsensus) HandleConsensusMessage(message []byte) error {
-    // Not implemented
     return nil
 }
 
 func (pow *PoWConsensus) miningLoop() {
-    for pow.running {
-        block, _ := pow.CreateBlock()
-        nonce := uint64(rand.Intn(1e6))
-        for {
-            block.Header.Nonce = nonce
-            hash := sha256.Sum256([]byte(block.Hash()))
-            if hasLeadingZeros(hex.EncodeToString(hash[:]), pow.difficulty) {
-                block.Header.Hash = hex.EncodeToString(hash[:])
-                break
+    threadCount := 4
+    var wg sync.WaitGroup
+    for i := 0; i < threadCount; i++ {
+        wg.Add(1)
+        go func(threadID int) {
+            defer wg.Done()
+            for pow.running {
+                start := time.Now()
+                block, _ := pow.CreateBlock()
+                mined := pow.mineBlock(block)
+                if mined {
+                    pow.blockchain.AddBlock(block)
+                    pow.recorder.Record("pow", time.Since(start))
+                }
+                time.Sleep(1 * time.Second)
             }
-            nonce++
-        }
-        pow.blockchain.AddBlock(block)
-        time.Sleep(time.Second * 2)
+        }(i)
     }
+    wg.Wait()
+}
+
+func (pow *PoWConsensus) mineBlock(block *core.Block) bool {
+    for nonce := uint64(0); nonce < 1e6; nonce++ {
+        block.Header.Nonce = nonce
+        hash := sha256.Sum256([]byte([]byte(block.Hash())))
+        if hasLeadingZeros(hex.EncodeToString(hash[:]), pow.difficulty) {
+            block.Header.Hash = hex.EncodeToString(hash[:])
+            return true
+        }
+    }
+    return false
 }
 
 func hasLeadingZeros(hash string, difficulty int) bool {

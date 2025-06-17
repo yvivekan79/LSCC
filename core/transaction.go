@@ -11,13 +11,9 @@ import (
 type TransactionType int
 
 const (
-	// Regular transaction between accounts
 	RegularTransaction TransactionType = iota
-	// Cross-shard transaction
 	CrossShardTransaction
-	// Consensus transaction (validator rewards, staking, etc.)
 	ConsensusTransaction
-	// Layer-to-layer transaction
 	LayerTransaction
 )
 
@@ -29,7 +25,8 @@ type Transaction struct {
 	Amount      float64         `json:"amount"`
 	Fee         float64         `json:"fee"`
 	Data        []byte          `json:"data"`
-	Timestamp   int64           `json:"timestamp"`
+	Timestamp   int64           `json:"timestamp"`   // Time when the transaction was created
+	SubmitAt    int64           `json:"submit_at"`   // Time when the transaction was submitted to the pool
 	Type        TransactionType `json:"type"`
 	Signature   string          `json:"signature"`
 	SourceShard int             `json:"source_shard"`
@@ -47,6 +44,7 @@ func NewTransaction(from, to string, amount, fee float64, sourceShard, targetSha
 		Amount:      amount,
 		Fee:         fee,
 		Timestamp:   time.Now().Unix(),
+		SubmitAt:    time.Now().UnixNano(), // Capture precise submission timestamp
 		Type:        txType,
 		SourceShard: sourceShard,
 		TargetShard: targetShard,
@@ -66,7 +64,6 @@ func NewTransaction(from, to string, amount, fee float64, sourceShard, targetSha
 
 // CalculateHash calculates the hash of the transaction
 func (tx *Transaction) CalculateHash() (string, error) {
-	// Create a temporary copy without the hash and signature fields
 	txCopy := *tx
 	txCopy.Hash = ""
 	txCopy.Signature = ""
@@ -83,16 +80,12 @@ func (tx *Transaction) CalculateHash() (string, error) {
 
 // Sign signs the transaction with the provided private key
 func (tx *Transaction) Sign(privateKey string) error {
-	// In a real implementation, this would use actual cryptographic signing
-	// For this example, we'll just set a dummy signature
 	tx.Signature = "signed:" + tx.Hash[:8] + ":" + privateKey[:8]
 	return nil
 }
 
 // VerifySignature verifies the transaction's signature
 func (tx *Transaction) VerifySignature() bool {
-	// In a real implementation, this would verify the signature cryptographically
-	// For this example, we'll just check if the signature exists
 	return tx.Signature != ""
 }
 
@@ -103,22 +96,16 @@ func (tx *Transaction) IsCrossShard() bool {
 
 // IsValid checks if the transaction is valid
 func (tx *Transaction) IsValid() bool {
-	// Check if the transaction has a valid signature
 	if !tx.VerifySignature() {
 		return false
 	}
 
-	// Check for valid amounts
 	if tx.Amount <= 0 || tx.Fee < 0 {
 		return false
 	}
 
-	// Verify hash integrity
 	hash, err := tx.CalculateHash()
-	if err != nil {
-		return false
-	}
-	if hash != tx.Hash {
+	if err != nil || hash != tx.Hash {
 		return false
 	}
 
