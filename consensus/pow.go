@@ -4,241 +4,99 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"lscc/config"
 	"lscc/core"
 	"lscc/utils"
+	"math/big"
 	"time"
 )
 
-type PoWConsensus struct {
-	blockchain  *core.Blockchain
-	nodeID      string
-	difficulty  int
-	target      string
-	mining      bool
-	mu          sync.RWMutex
-	logger      *utils.Logger
-	config      *config.Config
+type PoW struct {
+	difficulty int
+	logger     *utils.Logger
 }
 
-func NewPoWConsensus(cfg *config.Config, blockchain *core.Blockchain) (*PoWConsensus, error) {
-	logger := utils.InitLoggerLevel(cfg.LoggingLevel)
-
-	difficulty := cfg.ConsensusParams.Difficulty
-	if difficulty == 0 {
-		difficulty = 2 // Default difficulty
-	}
-
-	target := strings.Repeat("0", difficulty)
-
-	return &PoWConsensus{
-		blockchain: blockchain,
-		nodeID:     cfg.NodeID,
+func NewPoW(difficulty int) *PoW {
+	return &PoW{
 		difficulty: difficulty,
-		target:     target,
-		mining:     false,
-		logger:     logger,
-		config:     cfg,
-	}, nil
+		logger:     utils.GetLogger(),
+	}
 }
 
-func (p *PoWConsensus) Start() error {
-	p.logger.Info("Starting PoW consensus", "node", p.nodeID, "difficulty", p.difficulty)
-
-	go p.miningLoop()
-
+func (pow *PoW) Start() error {
+	pow.logger.Info("PoW consensus engine started", "difficulty", pow.difficulty)
 	return nil
 }
 
-func (p *PoWConsensus) Stop() error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.mining = false
-	p.logger.Info("Stopping PoW consensus")
+func (pow *PoW) Stop() error {
+	pow.logger.Info("PoW consensus engine stopped")
 	return nil
 }
 
-func (p *PoWConsensus) CreateBlock() (*core.Block, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	transactions := p.blockchain.GetPendingTransactions()
-	if len(transactions) == 0 {
-		return nil, fmt.Errorf("no pending transactions")
+func (pow *PoW) ValidateBlock(block *core.Block) error {
+	if !pow.isValidProof(block) {
+		return fmt.Errorf("invalid proof of work")
 	}
+	return nil
+}
 
-	lastBlock := p.blockchain.GetLastBlock()
-	height := uint64(0)
-	prevHash := ""
-
-	if lastBlock != nil {
-		height = lastBlock.Height + 1
-		prevHash = lastBlock.Hash
-	}
-
-	block := &core.Block{
-		Height:        height,
-		Timestamp:     time.Now().Unix(),
-		PrevBlockHash: prevHash,
-		Transactions:  transactions[:min(len(transactions), 10)],
-		Validator:     p.nodeID,
-		ShardID:       p.config.ShardID,
-	}
+func (pow *PoW) ProposeBlock(transactions []*core.Transaction, prevBlockHash string, height uint64, shardID int) (*core.Block, error) {
+	block := core.NewBlock(height, prevBlockHash, transactions, "pow-miner", shardID)
 
 	// Mine the block
-	nonce, hash := p.mineBlock(block)
-	block.Nonce = nonce
-	block.Hash = hash
-
-	p.logger.Info("PoW block mined", "height", block.Height, "hash", block.Hash, "nonce", nonce, "txCount", len(block.Transactions))
+	pow.mineBlock(block)
 
 	return block, nil
 }
 
-func (p *PoWConsensus) mineBlock(block *core.Block) (uint64, string) {
-	var nonce uint64 = 0
-	var hash string
+func (pow *PoW) mineBlock(block *core.Block) {
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-pow.difficulty))
 
-	startTime := time.Now()
+	var hashInt big.Int
+	var hash [32]byte
 
-	for {
-		blockData := fmt.Sprintf("%d:%d:%s:%s:%d", block.Height, block.Timestamp, block.PrevBlockHash, block.Validator, nonce)
-		hashBytes := sha256.Sum256([]byte(blockData))
-		hash = hex.EncodeToString(hashBytes[:])
+	pow.logger.Info("Mining block", "height", block.Height, "difficulty", pow.difficulty)
 
-		if strings.HasPrefix(hash, p.target) {
-			duration := time.Since(startTime)
-			p.logger.Info("PoW mining completed", "nonce", nonce, "hash", hash, "duration", duration)
+	for block.Nonce < ^uint64(0) {
+		data := pow.prepareData(block)
+		hash = sha256.Sum256(data)
+		hashInt.SetBytes(hash[:])
+
+		if hashInt.Cmp(target) == -1 {
 			break
-		}
-
-		nonce++
-
-		// Check if we should stop mining
-		p.mu.RLock()
-		if !p.mining {
-			p.mu.RUnlock()
-			break
-		}
-		p.mu.RUnlock()
-
-		// Prevent infinite mining in case of high difficulty
-		if nonce%100000 == 0 {
-			p.logger.Debug("PoW mining progress", "nonce", nonce, "target", p.target)
+		} else {
+			block.Nonce++
 		}
 	}
 
-	return nonce, hash
+	block.Hash = hex.EncodeToString(hash[:])
+	pow.logger.Info("Block mined", "height", block.Height, "hash", block.Hash, "nonce", block.Nonce)
 }
 
-func (p *PoWConsensus) ValidateBlock(block *core.Block) bool {
-	p.logger.Debug("PoW validating block", "height", block.Height, "hash", block.Hash)
+func (pow *PoW) isValidProof(block *core.Block) bool {
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-pow.difficulty))
 
-	// Validate block structure
-	if block.Height == 0 {
-		return true // Genesis block
-	}
+	data := pow.prepareData(block)
+	hash := sha256.Sum256(data)
+	var hashInt big.Int
+	hashInt.SetBytes(hash[:])
 
-	lastBlock := p.blockchain.GetLastBlock()
-	if lastBlock == nil && block.Height != 0 {
-		p.logger.Error("No genesis block found")
-		return false
-	}
-
-	if lastBlock != nil && block.Height != lastBlock.Height+1 {
-		p.logger.Error("Invalid block height", "expected", lastBlock.Height+1, "got", block.Height)
-		return false
-	}
-
-	if lastBlock != nil && block.PrevBlockHash != lastBlock.Hash {
-		p.logger.Error("Invalid previous block hash")
-		return false
-	}
-
-	// Validate proof of work
-	if !p.validateProofOfWork(block) {
-		p.logger.Error("Invalid proof of work", "hash", block.Hash, "target", p.target)
-		return false
-	}
-
-	return true
+	return hashInt.Cmp(target) == -1
 }
 
-func (p *PoWConsensus) validateProofOfWork(block *core.Block) bool {
-	blockData := fmt.Sprintf("%d:%d:%s:%s:%d", block.Height, block.Timestamp, block.PrevBlockHash, block.Validator, block.Nonce)
-	hashBytes := sha256.Sum256([]byte(blockData))
-	calculatedHash := hex.EncodeToString(hashBytes[:])
+func (pow *PoW) prepareData(block *core.Block) []byte {
+	data := fmt.Sprintf("%d:%d:%s:%s:%d:%d",
+		block.Height, block.Timestamp, block.PrevBlockHash, block.Validator, block.ShardID, block.Nonce)
 
-	return calculatedHash == block.Hash && strings.HasPrefix(block.Hash, p.target)
-}
-
-func (p *PoWConsensus) ProcessBlock(block *core.Block) error {
-	if !p.ValidateBlock(block) {
-		return fmt.Errorf("block validation failed")
-	}
-
-	err := p.blockchain.AddBlock(block)
-	if err != nil {
-		return fmt.Errorf("failed to add block to blockchain: %v", err)
-	}
-
-	// Remove processed transactions from mempool
 	for _, tx := range block.Transactions {
-		p.blockchain.RemoveFromMempool(tx.Hash)
+		data += ":" + tx.Hash
 	}
 
-	p.logger.Info("PoW block processed and added to blockchain", "height", block.Height, "hash", block.Hash)
-
-	return nil
+	return []byte(data)
 }
 
-func (p *PoWConsensus) miningLoop() {
-	p.mu.Lock()
-	p.mining = true
-	p.mu.Unlock()
-
-	ticker := time.NewTicker(5 * time.Second) // Check for new transactions every 5 seconds
-	defer ticker.Stop()
-
-	for range ticker.C {
-		p.mu.RLock()
-		if !p.mining {
-			p.mu.RUnlock()
-			break
-		}
-		p.mu.RUnlock()
-
-		block, err := p.CreateBlock()
-		if err != nil {
-			continue // No transactions to mine
-		}
-
-		err = p.ProcessBlock(block)
-		if err != nil {
-			p.logger.Error("Failed to process mined block", "error", err)
-		}
-	}
-}
-
-func (p *PoWConsensus) GetType() string {
-	return "pow"
-}
-
-func (p *PoWConsensus) GetStatus() map[string]interface{} {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	return map[string]interface{}{
-		"type":       "pow",
-		"node_id":    p.nodeID,
-		"difficulty": p.difficulty,
-		"target":     p.target,
-		"mining":     p.mining,
-	}
-}
-
-func min(a, b int) int {
+func powMin(a, b int) int {
 	if a < b {
 		return a
 	}
