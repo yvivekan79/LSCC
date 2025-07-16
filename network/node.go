@@ -1,3 +1,4 @@
+
 package network
 
 import (
@@ -7,7 +8,7 @@ import (
 	"lscc/config"
 	"lscc/core"
 	"lscc/utils"
-	"lscc/consensus" // Import the consensus package
+	"lscc/consensus"
 	"sync"
 	"time"
 )
@@ -17,8 +18,8 @@ type Node struct {
 	Config     *config.Config
 	Blockchain *core.Blockchain
 	Logger     *utils.Logger
-	consensus  core.Consensus // Interface for consensus algorithms
-	mu         sync.Mutex      // Mutex to protect concurrent access to the node's state
+	consensus  core.Consensus
+	mu         sync.Mutex
 }
 
 // NewNode creates a new network node.
@@ -94,11 +95,8 @@ func (n *Node) Start() error {
 	n.Logger.Info("=== Starting Node ===")
 	n.Logger.Info("Node configuration", "shardID", n.Config.ShardID, "layer", n.Config.Layer, "port", n.Config.Port)
 
-	// Initialize the blockchain with the genesis block first
 	n.Logger.Info("Initializing blockchain...")
-	genesisBlock := core.NewBlock(0, "0", []*core.Transaction{}, "genesis", n.Config.ShardID)
-	n.Blockchain.AddBlock(genesisBlock)
-	n.Logger.Info("Genesis block added to the blockchain", "hash", genesisBlock.Hash)
+	n.Logger.Info("Genesis block already added during blockchain creation")
 
 	// Create HTTP server with timeout configurations
 	address := fmt.Sprintf("0.0.0.0:%d", n.Config.Port)

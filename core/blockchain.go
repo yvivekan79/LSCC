@@ -1,4 +1,4 @@
-// Applying the provided change to add the NewBlock function and modify the AddBlock function in the core package.
+
 package core
 
 import (
@@ -41,8 +41,6 @@ func (bc *Blockchain) GetBlocks() []*Block {
 	copy(blocks, bc.Blocks)
 	return blocks
 }
-
-
 
 func (bc *Blockchain) ValidateBlock(block *Block) error {
 	bc.mu.RLock()
