@@ -28,4 +28,3 @@ func (ccc *CrossChannelConsensus) ValidateCrossShard(block *core.Block) bool {
 func (ccc *CrossChannelConsensus) AddCrossRef(block *core.Block, ref string) {
     block.Header.CrossRefs = append(block.Header.CrossRefs, ref)
 }
-
