@@ -64,11 +64,10 @@ func (n *Node) Start() error {
     n.Blockchain.AddBlock(genesisBlock) 
     n.Logger.Info("Genesis block added to the blockchain", "hash", genesisBlock.Hash)
 
-    // Bind to 0.0.0.0 to make it accessible externally
+    // Create HTTP server with timeout configurations
     address := fmt.Sprintf("0.0.0.0:%d", n.Config.Port)
-    n.Logger.Info("Attempting to bind HTTP server", "address", address)
-
     listener, err := net.Listen("tcp", address)
+
     if err != nil {
         n.Logger.Error("Failed to bind to address", "address", address, "error", err)
         return err
