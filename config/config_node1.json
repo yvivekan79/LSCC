@@ -1,0 +1,14 @@
+{
+  "node_id": "node1",
+  "port": 8000,
+  "shard_id": 0,
+  "layer": 0,
+  "is_relay": true,
+  "bootstrap_nodes": ["192.168.29.213:8000", "localhost:8002", "localhost:8003"],
+  "consensus_type": "pow",
+  "logging_level": "debug",
+  "consensus_params": {
+    "difficulty": 2
+  }
+}
+
