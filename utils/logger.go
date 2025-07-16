@@ -3,6 +3,7 @@ package utils
 import (
     "log"
     "os"
+    "sync"
 )
 
 type Logger struct {
@@ -10,11 +11,23 @@ type Logger struct {
     level  string
 }
 
+var (
+    defaultLogger *Logger
+    once          sync.Once
+)
+
 func InitLoggerLevel(level string) *Logger {
     return &Logger{
         logger: log.New(os.Stdout, "", log.LstdFlags),
         level:  level,
     }
+}
+
+func GetLogger() *Logger {
+    once.Do(func() {
+        defaultLogger = InitLoggerLevel("info")
+    })
+    return defaultLogger
 }
 
 func (l *Logger) logf(prefix string, msg string, args ...interface{}) {

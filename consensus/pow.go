@@ -7,7 +7,6 @@ import (
 	"lscc/core"
 	"lscc/utils"
 	"math/big"
-	"time"
 )
 
 type PoW struct {

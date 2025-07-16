@@ -5,7 +5,6 @@ import (
 	"lscc/core"
 	"lscc/utils"
 	"sync"
-	"time"
 )
 
 type PBFT struct {
@@ -99,11 +98,11 @@ func (pbft *PBFT) IsBlockCommitted(blockHash string) bool {
 	pbft.mu.RLock()
 	defer pbft.mu.RUnlock()
 
-	requiredCommits := pbftMin(len(pbft.validators)*2/3+1, len(pbft.validators))
+	requiredCommits := minPbft(len(pbft.validators)*2/3+1, len(pbft.validators))
 	return len(pbft.commits[blockHash]) >= requiredCommits
 }
 
-func pbftMin(a, b int) int {
+func minPbft(a, b int) int {
 	if a < b {
 		return a
 	}
