@@ -1,16 +1,6 @@
 
 #!/bin/bash
 
-echo "=== Starting LSCC Multi-Node Network ==="
-mkdir -p logs
-
-# Build the project first
-echo "Building LSCC project..."
-make clean && make
-if [ $? -ne 0 ]; then
-    echo "Build failed! Exiting..."
-    exit 1
-fi
 
 echo "Launching node1 (PoW) on port 8000"
 ./lscc-benchmark --config=config/config_node1.json > logs/node1.log 2>&1 &
