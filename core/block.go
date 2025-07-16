@@ -1,56 +1,94 @@
+
 package core
 
 import (
     "crypto/sha256"
     "encoding/hex"
+    "encoding/json"
+    "fmt"
     "time"
 )
 
-type BlockHeader struct {
-    PreviousHash string
-    Timestamp    int64
-    Nonce        int
-    ShardID      int
-    Layer        int
-    CrossRefs    []string
-}
-
-
-
-// Block represents a block in the blockchain.
 type Block struct {
-    Header       BlockHeader
-    Hash         string
-    PrevHash     string
-    Transactions []*Transaction
-    Height       int
-    Nonce        int
+    Height        uint64         `json:"height"`
+    Timestamp     int64          `json:"timestamp"`
+    PrevBlockHash string         `json:"prev_block_hash"`
+    Hash          string         `json:"hash"`
+    Transactions  []*Transaction `json:"transactions"`
+    Validator     string         `json:"validator"`
+    Signature     string         `json:"signature"`
+    ShardID       int            `json:"shard_id"`
+    Nonce         uint64         `json:"nonce"`
 }
-func NewBlock(prevHash string, txs []*Transaction, shardID int, layer int) *Block {
+
+func NewBlock(height uint64, prevHash string, transactions []*Transaction, validator string, shardID int) *Block {
     block := &Block{
-        Header: BlockHeader{
-            PreviousHash: prevHash,
-            Timestamp:    time.Now().Unix(),
-            ShardID:      shardID,
-            Layer:        layer,
-        },
-        Transactions: txs,
+        Height:        height,
+        Timestamp:     time.Now().Unix(),
+        PrevBlockHash: prevHash,
+        Transactions:  transactions,
+        Validator:     validator,
+        ShardID:       shardID,
+        Nonce:         0,
     }
+    
     block.Hash = block.CalculateHash()
     return block
 }
 
 func (b *Block) CalculateHash() string {
-    h := sha256.New()
-    h.Write([]byte(b.Header.PreviousHash))
-    h.Write([]byte(string(b.Header.Timestamp)))
+    blockData := fmt.Sprintf("%d:%d:%s:%s:%d:%d", 
+        b.Height, b.Timestamp, b.PrevBlockHash, b.Validator, b.ShardID, b.Nonce)
+    
     for _, tx := range b.Transactions {
-        h.Write([]byte(tx.Hash))
+        blockData += ":" + tx.Hash
     }
-    return hex.EncodeToString(h.Sum(nil))
+    
+    hash := sha256.Sum256([]byte(blockData))
+    return hex.EncodeToString(hash[:])
 }
 
-func (b *Block) IsValid(prevHash string) bool {
-    return b.Header.PreviousHash == prevHash && b.Hash == b.CalculateHash()
+func (b *Block) Serialize() ([]byte, error) {
+    return json.Marshal(b)
 }
 
+func DeserializeBlock(data []byte) (*Block, error) {
+    var block Block
+    err := json.Unmarshal(data, &block)
+    return &block, err
+}
+
+func (b *Block) Validate() bool {
+    if b.Height < 0 {
+        return false
+    }
+    
+    if b.Timestamp <= 0 {
+        return false
+    }
+    
+    if b.Hash == "" {
+        return false
+    }
+    
+    // Validate hash
+    calculatedHash := b.CalculateHash()
+    if calculatedHash != b.Hash {
+        return false
+    }
+    
+    return true
+}
+
+func GenesisBlock(shardID int) *Block {
+    return &Block{
+        Height:        0,
+        Timestamp:     time.Now().Unix(),
+        PrevBlockHash: "",
+        Hash:          "genesis_block_" + fmt.Sprintf("%d", shardID),
+        Transactions:  []*Transaction{},
+        Validator:     "genesis",
+        ShardID:       shardID,
+        Nonce:         0,
+    }
+}
