@@ -31,6 +31,16 @@ func NewBlockchain(shardID int, nodeID string) *Blockchain {
     return bc
 }
 
+func (bc *Blockchain) GetBlocks() []*Block {
+    bc.mu.RLock()
+    defer bc.mu.RUnlock()
+    
+    // Create a copy to avoid race conditions
+    blocks := make([]*Block, len(bc.Blocks))
+    copy(blocks, bc.Blocks)
+    return blocks
+}
+
 func (bc *Blockchain) AddBlock(block *Block) error {
     bc.mu.Lock()
     defer bc.mu.Unlock()

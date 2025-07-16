@@ -116,20 +116,30 @@ func (n *Node) handleSend(w http.ResponseWriter, r *http.Request) {
         tx.Timestamp = time.Now().Unix()
     }
     
+    // Set default values for missing fields
+    if tx.Fee == 0 {
+        tx.Fee = 0.01 // Default fee
+    }
+    if tx.SourceShard == 0 {
+        tx.SourceShard = n.Config.ShardID
+    }
+    if tx.TargetShard == 0 {
+        tx.TargetShard = n.Config.ShardID
+    }
+    
     // Calculate the hash of the transaction
     n.Logger.Info("Calculating transaction hash...")
-    data := fmt.Sprintf("%s:%s:%f:%d", tx.From, tx.To, tx.Amount, tx.Timestamp)
-    hash := sha256.Sum256([]byte(data))
-    tx.Hash = hex.EncodeToString(hash[:])
+    tx.Hash = tx.CalculateHash()
     n.Logger.Info("Transaction hash calculated", "hash", tx.Hash)
     
     // Add the transaction to the blockchain
     n.Logger.Info("Adding transaction to blockchain...")
-    if n.Blockchain.Transactions == nil {
-        n.Blockchain.Transactions = make(map[string]*core.Transaction)
-        n.Logger.Info("Initialized blockchain transactions map")
+    err := n.Blockchain.AddTransaction(&tx)
+    if err != nil {
+        n.Logger.Error("Failed to add transaction to blockchain", "error", err)
+        http.Error(w, fmt.Sprintf("Failed to add transaction: %v", err), http.StatusBadRequest)
+        return
     }
-    n.Blockchain.AddTransaction(&tx)
     n.Logger.Info("Transaction added to blockchain successfully", "hash", tx.Hash)
     
     w.Header().Set("Content-Type", "application/json")

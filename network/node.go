@@ -30,7 +30,7 @@ func NewNode(cfg *config.Config, logger *utils.Logger) (*Node, error) {
     if cfg.ShardID < 0 {
         return nil, fmt.Errorf("shard ID cannot be negative: %d", cfg.ShardID)
     }
-    bc := core.NewBlockchain(logger)
+    bc := core.NewBlockchain(cfg.ShardID, cfg.NodeID)
 	node := &Node{
         Config:     cfg,
         Blockchain: bc,
