@@ -1,0 +1,13 @@
+2025/06/17 18:25:37 [INFO] Starting node...
+2025/06/17 18:25:37 [INFO] Trying to bind HTTP server to :8000
+2025/06/17 18:25:37 [INFO] Successfully bound to port 8000
+2025/06/17 18:25:37 [INFO] Starting HTTP server...
+2025/06/17 18:25:37 [INFO] Node started on port 8000
+2025/06/17 18:25:37 [INFO] Shard ID: 0, Layer: 0
+2025/06/17 18:25:37 [INFO] Node is ready to accept transactions
+2025/06/17 18:25:37 [INFO] Genesis block added to the blockchain
+2025/06/17 18:25:37 [INFO] REST API server is running
+2025/06/17 18:25:37 [INFO] Node started successfully
+2025/06/17 18:25:42 [INFO] Adding transaction: &{Alice Bob 10 1750184742 847b79e8433d11b73791c0d6a8b9beda43a00ecb8e6633b910abbb1db1aa136b}
+2025/06/17 18:25:50 [INFO] Adding transaction: &{Alice Bob 10 1750184750 48eff489b1233bcc35bf8dafa4d8478451d4c03d1645811c4adf46921fb19c42}
+2025/06/17 18:25:54 [INFO] Adding transaction: &{Alice Bob 10 1750184754 d3499aa3a29981eb528ca4c967b04b6bc0e511cc5ce66687cb2667e6788f0b38}
