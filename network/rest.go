@@ -205,6 +205,16 @@ func (n *Node) handleChain(w http.ResponseWriter, r *http.Request) {
 
 	
 
+	response := map[string]interface{}{
+		"blocks":       enrichedBlocks,
+		"total_blocks": len(blocks),
+		"chain_height": n.Blockchain.GetHeight(),
+		"shard_id":     n.Config.ShardID,
+		"layer":        n.Config.Layer,
+		"node_id":      n.Config.NodeID,
+		"timestamp":    time.Now().Unix(),
+	}
+
 	n.Logger.Info("Blockchain request processed successfully",
 		"blocks_count", len(blocks),
 		"height", n.Blockchain.GetHeight())
@@ -214,7 +224,7 @@ func (n *Node) handleChain(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	json.NewEncoder(w).Encode(enrichedBlocks)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (n *Node) handleMempool(w http.ResponseWriter, r *http.Request) {
