@@ -1,93 +1,139 @@
+
 package core
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
 type Block struct {
-	Height        uint64         `json:"height"`
-	Hash          string         `json:"hash"`
+	Index         uint64         `json:"index"`
 	PrevBlockHash string         `json:"prev_block_hash"`
+	Timestamp     time.Time      `json:"timestamp"`
 	Transactions  []*Transaction `json:"transactions"`
-	Timestamp     int64          `json:"timestamp"`
 	Validator     string         `json:"validator"`
-	Signature     string         `json:"signature"`
 	ShardID       int            `json:"shard_id"`
-	Nonce         uint64         `json:"nonce"`
+	Hash          string         `json:"hash"`
+	MerkleRoot    string         `json:"merkle_root"`
+	Layer         int            `json:"layer"`
 }
 
-func NewBlock(height uint64, prevHash string, transactions []*Transaction, validator string, shardID int) *Block {
+func NewBlock(index uint64, prevBlockHash string, transactions []*Transaction, validator string, shardID int) *Block {
 	block := &Block{
-		Height:        height,
-		Timestamp:     time.Now().Unix(),
-		PrevBlockHash: prevHash,
+		Index:         index,
+		PrevBlockHash: prevBlockHash,
+		Timestamp:     time.Now(),
 		Transactions:  transactions,
 		Validator:     validator,
 		ShardID:       shardID,
-		Nonce:         0,
+		Layer:         0,
 	}
-
+	
+	block.MerkleRoot = block.calculateMerkleRoot()
 	block.Hash = block.CalculateHash()
+	
 	return block
 }
 
 func (b *Block) CalculateHash() string {
-	blockData := fmt.Sprintf("%d:%d:%s:%s:%d:%d",
-		b.Height, b.Timestamp, b.PrevBlockHash, b.Validator, b.ShardID, b.Nonce)
-
-	for _, tx := range b.Transactions {
-		blockData += ":" + tx.Hash
-	}
-
-	hash := sha256.Sum256([]byte(blockData))
+	data, _ := json.Marshal(struct {
+		Index         uint64    `json:"index"`
+		PrevBlockHash string    `json:"prev_block_hash"`
+		Timestamp     time.Time `json:"timestamp"`
+		MerkleRoot    string    `json:"merkle_root"`
+		Validator     string    `json:"validator"`
+		ShardID       int       `json:"shard_id"`
+	}{
+		Index:         b.Index,
+		PrevBlockHash: b.PrevBlockHash,
+		Timestamp:     b.Timestamp,
+		MerkleRoot:    b.MerkleRoot,
+		Validator:     b.Validator,
+		ShardID:       b.ShardID,
+	})
+	
+	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
 }
 
-func (b *Block) Serialize() ([]byte, error) {
-	return json.Marshal(b)
-}
-
-func DeserializeBlock(data []byte) (*Block, error) {
-	var block Block
-	err := json.Unmarshal(data, &block)
-	return &block, err
+func (b *Block) calculateMerkleRoot() string {
+	if len(b.Transactions) == 0 {
+		return ""
+	}
+	
+	var hashes []string
+	for _, tx := range b.Transactions {
+		hashes = append(hashes, tx.Hash)
+	}
+	
+	for len(hashes) > 1 {
+		var newHashes []string
+		for i := 0; i < len(hashes); i += 2 {
+			if i+1 < len(hashes) {
+				combined := hashes[i] + hashes[i+1]
+				hash := sha256.Sum256([]byte(combined))
+				newHashes = append(newHashes, hex.EncodeToString(hash[:]))
+			} else {
+				newHashes = append(newHashes, hashes[i])
+			}
+		}
+		hashes = newHashes
+	}
+	
+	return hashes[0]
 }
 
 func (b *Block) Validate() bool {
-	if b.Height < 0 {
+	// Basic validation
+	if b.Index < 0 {
 		return false
 	}
-
-	if b.Timestamp <= 0 {
-		return false
-	}
-
+	
 	if b.Hash == "" {
 		return false
 	}
-
-	// Validate hash
-	calculatedHash := b.CalculateHash()
-	if calculatedHash != b.Hash {
+	
+	// Verify hash
+	expectedHash := b.CalculateHash()
+	if b.Hash != expectedHash {
 		return false
 	}
-
+	
+	// Verify merkle root
+	expectedMerkleRoot := b.calculateMerkleRoot()
+	if b.MerkleRoot != expectedMerkleRoot {
+		return false
+	}
+	
+	// Validate all transactions
+	for _, tx := range b.Transactions {
+		if err := tx.Validate(); err != nil {
+			return false
+		}
+	}
+	
 	return true
 }
 
-func GenesisBlock(shardID int) *Block {
-	return &Block{
-		Height:        0,
-		Timestamp:     time.Now().Unix(),
-		PrevBlockHash: "",
-		Hash:          "genesis_block_" + fmt.Sprintf("%d", shardID),
-		Transactions:  []*Transaction{},
-		Validator:     "genesis",
-		ShardID:       shardID,
-		Nonce:         0,
+func (b *Block) AddTransaction(tx *Transaction) error {
+	if err := tx.Validate(); err != nil {
+		return err
 	}
+	
+	b.Transactions = append(b.Transactions, tx)
+	b.MerkleRoot = b.calculateMerkleRoot()
+	b.Hash = b.CalculateHash()
+	
+	return nil
+}
+
+func (b *Block) GetTransactionCount() int {
+	return len(b.Transactions)
+}
+
+func (b *Block) GetSize() int {
+	data, _ := json.Marshal(b)
+	return len(data)
 }

@@ -10,97 +10,107 @@ import (
 )
 
 type Transaction struct {
-	From        string  `json:"from"`
-	To          string  `json:"to"`
-	Amount      float64 `json:"amount"`
-	Fee         float64 `json:"fee"`
-	Timestamp   int64   `json:"timestamp"`
-	Hash        string  `json:"hash"`
-	Signature   string  `json:"signature"`
-	SourceShard int     `json:"source_shard"`
-	TargetShard int     `json:"target_shard"`
-	Nonce       uint64  `json:"nonce"`
-	Type        int     `json:"type"`
+	ID        string    `json:"id"`
+	From      string    `json:"from"`
+	To        string    `json:"to"`
+	Amount    float64   `json:"amount"`
+	Fee       float64   `json:"fee"`
+	Timestamp time.Time `json:"timestamp"`
+	Hash      string    `json:"hash"`
+	Signature string    `json:"signature"`
+	ShardID   int       `json:"shard_id"`
+	CrossShard bool     `json:"cross_shard"`
 }
 
-func NewTransaction(from, to string, amount, fee float64, sourceShard, targetShard int) *Transaction {
+func NewTransaction(from, to string, amount, fee float64, shardID int) *Transaction {
 	tx := &Transaction{
-		From:        from,
-		To:          to,
-		Amount:      amount,
-		Fee:         fee,
-		Timestamp:   time.Now().Unix(),
-		SourceShard: sourceShard,
-		TargetShard: targetShard,
-		Nonce:       0,
-		Type:        0,
+		ID:        generateTransactionID(),
+		From:      from,
+		To:        to,
+		Amount:    amount,
+		Fee:       fee,
+		Timestamp: time.Now(),
+		ShardID:   shardID,
+		CrossShard: false,
 	}
-
+	
 	tx.Hash = tx.CalculateHash()
 	return tx
 }
 
 func (tx *Transaction) CalculateHash() string {
-	txData := fmt.Sprintf("%s:%s:%.8f:%.8f:%d:%d:%d:%d:%d",
-		tx.From, tx.To, tx.Amount, tx.Fee, tx.Timestamp, tx.SourceShard, tx.TargetShard, tx.Nonce, tx.Type)
-
-	hash := sha256.Sum256([]byte(txData))
+	data, _ := json.Marshal(struct {
+		ID        string    `json:"id"`
+		From      string    `json:"from"`
+		To        string    `json:"to"`
+		Amount    float64   `json:"amount"`
+		Fee       float64   `json:"fee"`
+		Timestamp time.Time `json:"timestamp"`
+		ShardID   int       `json:"shard_id"`
+	}{
+		ID:        tx.ID,
+		From:      tx.From,
+		To:        tx.To,
+		Amount:    tx.Amount,
+		Fee:       tx.Fee,
+		Timestamp: tx.Timestamp,
+		ShardID:   tx.ShardID,
+	})
+	
+	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
 }
 
-func (tx *Transaction) Validate() bool {
-	if tx.From == "" || tx.To == "" {
-		return false
+func (tx *Transaction) Validate() error {
+	if tx.From == "" {
+		return fmt.Errorf("invalid from address")
 	}
-
+	
+	if tx.To == "" {
+		return fmt.Errorf("invalid to address")
+	}
+	
 	if tx.Amount <= 0 {
-		return false
+		return fmt.Errorf("invalid amount")
 	}
-
+	
 	if tx.Fee < 0 {
-		return false
+		return fmt.Errorf("invalid fee")
 	}
-
-	if tx.Timestamp <= 0 {
-		return false
-	}
-
+	
 	if tx.Hash == "" {
-		return false
+		return fmt.Errorf("invalid hash")
 	}
-
-	// Validate hash
-	calculatedHash := tx.CalculateHash()
-	if calculatedHash != tx.Hash {
-		return false
+	
+	// Verify hash
+	expectedHash := tx.CalculateHash()
+	if tx.Hash != expectedHash {
+		return fmt.Errorf("hash mismatch")
 	}
-
-	return true
+	
+	return nil
 }
 
-func (tx *Transaction) Serialize() ([]byte, error) {
-	return json.Marshal(tx)
+func (tx *Transaction) Sign(privateKey string) error {
+	// Simple signature implementation
+	tx.Signature = generateSignature(tx.Hash, privateKey)
+	return nil
 }
 
-func DeserializeTransaction(data []byte) (*Transaction, error) {
-	var tx Transaction
-	err := json.Unmarshal(data, &tx)
-	return &tx, err
+func (tx *Transaction) VerifySignature(publicKey string) bool {
+	// Simple signature verification
+	return tx.Signature != ""
 }
 
-func (tx *Transaction) IsCrossShardTransaction() bool {
-	return tx.SourceShard != tx.TargetShard
+func generateTransactionID() string {
+	timestamp := time.Now().UnixNano()
+	data := fmt.Sprintf("tx_%d", timestamp)
+	hash := sha256.Sum256([]byte(data))
+	return hex.EncodeToString(hash[:])[:16]
 }
 
-func (tx *Transaction) Sign(signature string) {
-	tx.Signature = signature
-}
-
-func (tx *Transaction) IsValid() bool {
-	return tx.Validate()
-}
-
-func (tx *Transaction) Confirm() {
-	// Mark transaction as confirmed - this could be expanded
-	// with additional confirmation logic
+func generateSignature(hash, privateKey string) string {
+	data := hash + privateKey
+	signature := sha256.Sum256([]byte(data))
+	return hex.EncodeToString(signature[:])
 }

@@ -1,7 +1,6 @@
 
 package core
 
-// Consensus represents the interface for consensus algorithms
 type Consensus interface {
 	Start() error
 	Stop() error

@@ -1,3 +1,4 @@
+
 package consensus
 
 import (
@@ -5,10 +6,16 @@ import (
 	"lscc/core"
 )
 
-type PBFT struct{}
+type PBFT struct {
+	nodeID     string
+	nodes      map[string]bool
+	blockchain *core.Blockchain
+}
 
 func NewPBFTConsensus(cfg interface{}, blockchain interface{}) (*PBFT, error) {
-	return &PBFT{}, nil
+	return &PBFT{
+		nodes: make(map[string]bool),
+	}, nil
 }
 
 func (pbft *PBFT) Start() error {
@@ -29,4 +36,12 @@ func (pbft *PBFT) ValidateBlock(block *core.Block) error {
 func (pbft *PBFT) ProposeBlock(transactions []*core.Transaction, prevBlockHash string, height uint64, shardID int) (*core.Block, error) {
 	block := core.NewBlock(height, prevBlockHash, transactions, "pbft-validator", shardID)
 	return block, nil
+}
+
+func (pbft *PBFT) AddNode(nodeID string) {
+	pbft.nodes[nodeID] = true
+}
+
+func (pbft *PBFT) RemoveNode(nodeID string) {
+	delete(pbft.nodes, nodeID)
 }
