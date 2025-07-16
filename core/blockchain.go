@@ -11,6 +11,7 @@ type Blockchain struct {
 	Mempool     []*Transaction
 	ShardID     int
 	NodeID      string
+	Height      uint64
 	mu          sync.RWMutex
 	txIndex     map[string]*Transaction
 }
@@ -41,16 +42,32 @@ func (bc *Blockchain) GetBlocks() []*Block {
 	return blocks
 }
 
-func NewBlock(height uint64, prevHash string, transactions []*Transaction, merkleRoot string, timestamp int64) *Block {
-	block := &Block{
-		Height:        height,
-		PrevBlockHash: prevHash,
-		Transactions:  transactions,
-		Timestamp:     timestamp,
-		ShardID:       1, // Default shard
+
+
+func (bc *Blockchain) ValidateBlock(block *Block) error {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+
+	// Basic validation
+	if !block.Validate() {
+		return fmt.Errorf("block validation failed")
 	}
-	block.Hash = block.CalculateHash()
-	return block
+
+	// Check if block height is correct
+	expectedHeight := bc.GetHeight() + 1
+	if block.Height != expectedHeight {
+		return fmt.Errorf("invalid block height: expected %d, got %d", expectedHeight, block.Height)
+	}
+
+	// Check previous block hash
+	if len(bc.Blocks) > 0 {
+		lastBlock := bc.Blocks[len(bc.Blocks)-1]
+		if block.PrevBlockHash != lastBlock.Hash {
+			return fmt.Errorf("invalid previous block hash")
+		}
+	}
+
+	return nil
 }
 
 func (bc *Blockchain) AddBlock(block *Block) error {
