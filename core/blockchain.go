@@ -212,3 +212,22 @@ func (bc *Blockchain) GetCrossShardTransactions() []*Transaction {
     
     return crossShardTxs
 }
+
+func (bc *Blockchain) GetNetworkStats() map[string]interface{} {
+    bc.mu.RLock()
+    defer bc.mu.RUnlock()
+    
+    totalTxs := 0
+    for _, block := range bc.Blocks {
+        totalTxs += len(block.Transactions)
+    }
+    
+    return map[string]interface{}{
+        "total_blocks":       len(bc.Blocks),
+        "total_transactions": totalTxs,
+        "pending_txs":        len(bc.Mempool),
+        "blockchain_height":  bc.GetHeight(),
+        "shard_id":          bc.ShardID,
+        "node_id":           bc.NodeID,
+    }
+}
