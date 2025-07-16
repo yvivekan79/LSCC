@@ -1,6 +1,6 @@
 {
   "node_id": "lscc-test-node",
-  "port": 8000,
+  "port": 5000,
   "bootstrap_nodes": [],
   "is_relay": true,
   "shard_id": 0,
