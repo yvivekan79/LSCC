@@ -28,7 +28,18 @@ echo "Launching node4 (PBFT) on port 8004"
 NODE4_PID=$!
 echo "Node4 PID: $NODE4_PID"
 
-echo "=== All nodes started successfully ==="
+sleep 2
+
+echo "Starting web dashboard on port 5000"
+cd web && go run server.go > ../logs/dashboard.log 2>&1 &
+DASHBOARD_PID=$!
+echo "Dashboard PID: $DASHBOARD_PID"
+cd ..
+
+echo "=== All nodes and dashboard started successfully ==="
+echo "🌐 WEB DASHBOARD: http://0.0.0.0:5000"
+echo ""
+echo "📡 API Endpoints:"
 echo "Node1 (PoW): http://0.0.0.0:8000"
 echo "Node2 (PoS): http://0.0.0.0:8002" 
 echo "Node3 (PoW): http://0.0.0.0:8003"
@@ -39,6 +50,7 @@ echo "  - Node1: logs/node1.log"
 echo "  - Node2: logs/node2.log" 
 echo "  - Node3: logs/node3.log"
 echo "  - Node4: logs/node4.log"
+echo "  - Dashboard: logs/dashboard.log"
 echo ""
 echo "To stop all nodes: killall lscc-benchmark"
 echo "Press Ctrl+C to stop this script (nodes will continue running)"
