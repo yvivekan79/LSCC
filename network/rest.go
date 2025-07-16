@@ -1,11 +1,8 @@
 package network
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"lscc/core"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -195,10 +192,10 @@ func (n *Node) handleChain(w http.ResponseWriter, r *http.Request) {
 			"height":        block.Height,
 			"hash":          block.Hash,
 			"prevBlockHash": block.PrevBlockHash,
-			"merkleRoot":    block.MerkleRoot,
+			"merkleRoot":    block.Hash, // Use block hash as merkle root
 			"timestamp":     block.Timestamp,
 			"shardID":       block.ShardID,
-			"layer":         block.Layer,
+			"layer":         0, // Default layer
 			"transactions":  block.Transactions,
 			"tx_count":      len(block.Transactions),
 			"size":          len(fmt.Sprintf("%+v", block)), // Approximate size

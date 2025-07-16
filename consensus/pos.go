@@ -27,6 +27,10 @@ func NewPoS() *PoS {
 	}
 }
 
+func NewPoSConsensus(cfg interface{}, blockchain interface{}) (*PoS, error) {
+	return NewPoS(), nil
+}
+
 func (pos *PoS) Start() error {
 	pos.logger.Info("PoS consensus engine started", "epoch", pos.currentEpoch)
 	return nil

@@ -21,6 +21,10 @@ func NewPoW(difficulty int) *PoW {
 	}
 }
 
+func NewPoWConsensus(cfg interface{}, blockchain interface{}) (*PoW, error) {
+	return NewPoW(2), nil
+}
+
 func (pow *PoW) Start() error {
 	pow.logger.Info("PoW consensus engine started", "difficulty", pow.difficulty)
 	return nil

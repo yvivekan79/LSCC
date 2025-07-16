@@ -60,7 +60,7 @@ func (n *Node) Start() error {
 
     // Initialize the blockchain with the genesis block first
     n.Logger.Info("Initializing blockchain...")
-    genesisBlock := core.NewBlock(fmt.Sprintf("%d", "0"), []*core.Transaction{}, n.Config.ShardID, n.Config.Layer)
+    genesisBlock := core.NewBlock(0, "0", []*core.Transaction{}, "genesis", n.Config.ShardID)
     n.Blockchain.AddBlock(genesisBlock) 
     n.Logger.Info("Genesis block added to the blockchain", "hash", genesisBlock.Hash)
 

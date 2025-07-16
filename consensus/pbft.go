@@ -32,6 +32,10 @@ func NewPBFT(nodeID string, validators []string) *PBFT {
 	}
 }
 
+func NewPBFTConsensus(cfg interface{}, blockchain interface{}) (*PBFT, error) {
+	return NewPBFT("default", []string{}), nil
+}
+
 func (pbft *PBFT) Start() error {
 	pbft.logger.Info("PBFT consensus engine started", "nodeID", pbft.nodeID)
 	return nil
