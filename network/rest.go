@@ -8,11 +8,16 @@ import (
     "crypto/sha256"
     "encoding/hex"
     "time"
+    "os"
+    "path/filepath"
 )
 
 func (n *Node) router() http.Handler {
     n.Logger.Info("Setting up HTTP router...")
     mux := http.NewServeMux()
+    
+    n.Logger.Info("Registering endpoint: /")
+    mux.HandleFunc("/", n.handleDashboard)
     
     n.Logger.Info("Registering endpoint: /status")
     mux.HandleFunc("/status", n.handleStatus)
@@ -26,8 +31,34 @@ func (n *Node) router() http.Handler {
     n.Logger.Info("HTTP router setup completed")
     return mux
 }
+func (n *Node) handleDashboard(w http.ResponseWriter, r *http.Request) {
+    n.Logger.Info("=== Dashboard Request ===", "method", r.Method, "url", r.URL.Path, "remote", r.RemoteAddr)
+    
+    // Serve the dashboard HTML file
+    dashboardPath := filepath.Join("web", "index.html")
+    if _, err := os.Stat(dashboardPath); os.IsNotExist(err) {
+        n.Logger.Error("Dashboard file not found", "path", dashboardPath)
+        http.Error(w, "Dashboard not found", http.StatusNotFound)
+        return
+    }
+    
+    w.Header().Set("Content-Type", "text/html")
+    http.ServeFile(w, r, dashboardPath)
+    n.Logger.Info("Dashboard served successfully")
+}
+
 func (n *Node) handleStatus(w http.ResponseWriter, r *http.Request) {
     n.Logger.Info("=== Status Request ===", "method", r.Method, "url", r.URL.Path, "remote", r.RemoteAddr)
+    
+    // Add CORS headers
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
     
     w.Header().Set("Content-Type", "application/json")
     status := map[string]interface{}{
@@ -48,6 +79,16 @@ func (n *Node) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 func (n *Node) handleSend(w http.ResponseWriter, r *http.Request) {
     n.Logger.Info("=== Transaction Request ===", "method", r.Method, "url", r.URL.Path, "remote", r.RemoteAddr)
+    
+    // Add CORS headers
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
     
     if r.Method != "POST" {
         n.Logger.Warn("Invalid method for /send endpoint", "method", r.Method)
@@ -101,6 +142,16 @@ func (n *Node) handleSend(w http.ResponseWriter, r *http.Request) {
 }
 func (n *Node) handleChain(w http.ResponseWriter, r *http.Request) {
     n.Logger.Info("=== Chain Request ===", "method", r.Method, "url", r.URL.Path, "remote", r.RemoteAddr)
+    
+    // Add CORS headers
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
     
     n.Logger.Info("Retrieving blockchain blocks...")
     blocks := n.Blockchain.GetBlocks()
