@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/json"
 	"fmt"
+	"lscc/core"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -202,15 +203,7 @@ func (n *Node) handleChain(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := map[string]interface{}{
-		"blocks":       enrichedBlocks,
-		"total_blocks": len(blocks),
-		"chain_height": n.Blockchain.GetHeight(),
-		"shard_id":     n.Config.ShardID,
-		"layer":        n.Config.Layer,
-		"node_id":      n.Config.NodeID,
-		"timestamp":    time.Now().Unix(),
-	}
+	
 
 	n.Logger.Info("Blockchain request processed successfully",
 		"blocks_count", len(blocks),
