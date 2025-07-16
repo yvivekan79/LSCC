@@ -1,0 +1,14 @@
+
+{
+  "node_id": "node4",
+  "port": 8004,
+  "shard_id": 1,
+  "layer": 1,
+  "is_relay": false,
+  "bootstrap_nodes": ["192.168.29.213:8000", "localhost:8002", "localhost:8003"],
+  "consensus_type": "pbft",
+  "logging_level": "debug",
+  "consensus_params": {
+    "difficulty": 2
+  }
+}
