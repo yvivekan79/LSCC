@@ -1,10 +1,22 @@
-2025/07/16 12:35:08 [INFO] Starting node...
-2025/07/16 12:35:08 [INFO] Trying to bind HTTP server to :8003
-2025/07/16 12:35:08 [INFO] Successfully bound to port 8003
-2025/07/16 12:35:08 [INFO] Starting HTTP server...
-2025/07/16 12:35:08 [INFO] Node started on port 8003
-2025/07/16 12:35:08 [INFO] Shard ID: 0, Layer: 0
-2025/07/16 12:35:08 [INFO] Node is ready to accept transactions
-2025/07/16 12:35:08 [INFO] Genesis block added to the blockchain
-2025/07/16 12:35:08 [INFO] REST API server is running
-2025/07/16 12:35:08 [INFO] Node started successfully
+2025/07/16 12:37:33 [INFO] === Starting Node ===
+2025/07/16 12:37:33 [INFO] Node configuration
+2025/07/16 12:37:33 [INFO] Initializing blockchain...
+2025/07/16 12:37:33 [INFO] Genesis block added to the blockchain
+2025/07/16 12:37:33 [INFO] Attempting to bind HTTP server
+2025/07/16 12:37:33 [INFO] Successfully bound to address
+2025/07/16 12:37:33 [INFO] Setting up HTTP router...
+2025/07/16 12:37:33 [INFO] Registering endpoint: /status
+2025/07/16 12:37:33 [INFO] Registering endpoint: /send
+2025/07/16 12:37:33 [INFO] Registering endpoint: /chain
+2025/07/16 12:37:33 [INFO] HTTP router setup completed
+2025/07/16 12:37:33 [INFO] REST API endpoints configured:
+2025/07/16 12:37:33 [INFO]   GET  /status - Node status information
+2025/07/16 12:37:33 [INFO]   POST /send   - Submit new transaction
+2025/07/16 12:37:33 [INFO]   GET  /chain  - Get blockchain blocks
+2025/07/16 12:37:33 [INFO] Starting HTTP server...
+2025/07/16 12:37:33 [INFO] === Node Started Successfully ===
+2025/07/16 12:37:33 [INFO] Node details
+2025/07/16 12:37:33 [INFO] Node is ready to accept transactions
+2025/07/16 12:37:33 [INFO] Access the node at:
+2025/07/16 12:37:33 [INFO] Node started successfully
+2025/07/16 12:37:33 [INFO] HTTP server listening for requests
