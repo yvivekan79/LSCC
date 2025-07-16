@@ -229,4 +229,3 @@ func (bc *Blockchain) GetNetworkStats() map[string]interface{} {
 		"node_id":           bc.NodeID,
 	}
 }
-`
